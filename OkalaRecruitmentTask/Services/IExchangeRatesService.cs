@@ -4,6 +4,6 @@ namespace OkalaRecruitmentTask.Services
 {
     public interface IExchangeRatesService
     {
-        Task<ExchangeRates?> GetExchangeRateAsync();
+        Task<ExchangeRates?> GetExchangeRatesAsync();
     }
 }

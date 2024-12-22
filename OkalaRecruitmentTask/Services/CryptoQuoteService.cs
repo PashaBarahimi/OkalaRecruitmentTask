@@ -20,7 +20,7 @@ public class CryptoQuoteService(ICryptoPriceService cryptoPriceService, IExchang
         }
         _logger.LogInformation("Price for {Code} found", code);
 
-        var exchangeRates = await _exchangeRatesService.GetExchangeRateAsync();
+        var exchangeRates = await _exchangeRatesService.GetExchangeRatesAsync();
         if (exchangeRates is null)
         {
             _logger.LogWarning("Exchange rates not found");
