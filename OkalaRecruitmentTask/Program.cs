@@ -3,6 +3,10 @@ using OkalaRecruitmentTask.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddSingleton<IExchangeRatesService, ExchangeRatesService>();
+builder.Services.AddSingleton<ICryptoPriceService, CryptoPriceService>();
+builder.Services.AddSingleton<ICryptoQuoteService, CryptoQuoteService>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
