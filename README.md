@@ -7,7 +7,7 @@ This repository contains the source code for the Okala recruitment task. The tas
 This project uses the following APIs:
 
 - [CoinMarketCap](https://coinmarketcap.com/api/) for fetching cryptocurrency quotes.
-- [ExchangeRate-API](https://exchangeratesapi.io/) for fetching exchange rates.
+- [ExchangeRates-API](https://exchangeratesapi.io/) for fetching exchange rates.
 
 The project is implemented using ASP.NET Core Web API and C#.
 
@@ -16,7 +16,7 @@ The project is implemented using ASP.NET Core Web API and C#.
 Before running the project, you need to set the following secrets:
 
 - CoinMarketCap API Key
-- ExchangeRate-API Access Key
+- ExchangeRates-API Access Key
 
 To set the secrets, run the following commands:
 
