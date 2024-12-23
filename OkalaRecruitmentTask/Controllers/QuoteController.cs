@@ -2,6 +2,7 @@
 using OkalaRecruitmentTask.Models;
 using OkalaRecruitmentTask.Services;
 using System.Configuration;
+using System.Net;
 
 namespace OkalaRecruitmentTask.Controllers;
 
@@ -39,12 +40,13 @@ public class QuoteController(ILogger<QuoteController> logger, ICryptoQuoteServic
         catch (ConfigurationErrorsException ex)
         {
             logger.LogCritical(ex, "Configuration error");
-            return StatusCode(500, "Failed to get quote for the code");
+            return StatusCode((int) HttpStatusCode.InternalServerError, "Failed to get quote for the code");
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "An unknown error occurred while getting quote for {Code}", code);
-            return StatusCode(500, "An unknown error occurred while getting quote for the code");
+            return StatusCode((int) HttpStatusCode.InternalServerError,
+                "An unknown error occurred while getting quote for the code");
         }
     }
 }

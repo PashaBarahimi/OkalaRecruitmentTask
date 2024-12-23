@@ -4,7 +4,8 @@ using System.Configuration;
 
 namespace OkalaRecruitmentTask.Services;
 
-public class CoinMarketCapService(ILogger<CoinMarketCapService> logger, IConfiguration configuration) : ICryptoPriceService
+public class CoinMarketCapService(ILogger<CoinMarketCapService> logger, IConfiguration configuration, HttpClient client)
+    : ICryptoPriceService
 {
     public async Task<CryptoPrice> GetPriceAsync(string code)
     {
@@ -43,7 +44,6 @@ public class CoinMarketCapService(ILogger<CoinMarketCapService> logger, IConfigu
     {
         logger.LogInformation("Fetching price for {Code} from {URL}", code, url);
 
-        using var client = new HttpClient();
         client.DefaultRequestHeaders.Add("X-CMC_PRO_API_KEY", apiKey);
 
         var response = await client.GetAsync($"{url}?symbol={code}&convert={currency}");

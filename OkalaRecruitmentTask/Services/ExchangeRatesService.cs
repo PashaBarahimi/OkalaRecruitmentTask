@@ -4,7 +4,8 @@ using System.Configuration;
 
 namespace OkalaRecruitmentTask.Services;
 
-public class ExchangeRatesService(ILogger<ExchangeRatesService> logger, IConfiguration configuration) : ICurrencyRatesService
+public class ExchangeRatesService(ILogger<ExchangeRatesService> logger, IConfiguration configuration, HttpClient client)
+    : ICurrencyRatesService
 {
     public async Task<CurrencyRates> GetCurrencyRatesAsync()
     {
@@ -34,26 +35,29 @@ public class ExchangeRatesService(ILogger<ExchangeRatesService> logger, IConfigu
         var apiKey = configuration["Quotes:APIs:ExchangeRates:APIKey"];
         if (string.IsNullOrEmpty(apiKey))
         {
-            logger.LogCritical("ExchangeRates API key not found in the configuration (CAUTION: Use dotnet user-secrets)");
+            logger.LogCritical(
+                "ExchangeRates API key not found in the configuration (CAUTION: Use dotnet user-secrets)");
             throw new ConfigurationErrorsException("ExchangeRates API key not found in the configuration");
         }
 
+        var x = configuration.GetSection("Quotes:Currencies:Required");
         var requiredSymbols = configuration.GetSection("Quotes:Currencies:Required").Get<string[]>();
         if (requiredSymbols is null || requiredSymbols.Length == 0)
         {
             logger.LogCritical("Required currencies not found in the configuration");
             throw new ConfigurationErrorsException("Required currencies not found in the configuration");
         }
+
         var symbols = string.Join(',', requiredSymbols);
 
         return await FetchCurrencyRatesFromApiAsync(url, baseCurrency, symbols, apiKey);
     }
 
-    private async Task<CurrencyRates> FetchCurrencyRatesFromApiAsync(string url, string baseCurrency, string symbols, string apiKey)
+    private async Task<CurrencyRates> FetchCurrencyRatesFromApiAsync(string url, string baseCurrency, string symbols,
+        string apiKey)
     {
         logger.LogInformation("Fetching currency rates from {URL}", url);
 
-        using var client = new HttpClient();
         var response = await client.GetAsync($"{url}?base={baseCurrency}&symbols={symbols}&access_key={apiKey}");
         if (!response.IsSuccessStatusCode)
         {
