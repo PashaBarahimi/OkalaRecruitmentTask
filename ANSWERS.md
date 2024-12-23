@@ -6,6 +6,7 @@
     - Add a feature to allow users specify the currencies they want the cryptocurrency quote to be converted to.
     - Add a feature to allow users fetch the latest quotes for all cryptocurrencies.
     - Add the 24-hour percentage change in price for each cryptocurrency.
+    - If I had more time, I would also use `IOption` to read the configuration only once and use it throughout the application, instead of reading the configuration every time a request is made.
 
 2. **What was the most useful feature that was added to the latest version of your language of choice? Please include a snippet of code that shows how you've used it.**
 
