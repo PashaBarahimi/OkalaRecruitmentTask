@@ -4,5 +4,5 @@ namespace OkalaRecruitmentTask.Services;
 
 public interface ICryptoQuoteService
 {
-    Task<CryptoQuote?> GetQuoteAsync(string code);
+    Task<CryptoQuote> GetQuoteAsync(string code);
 }

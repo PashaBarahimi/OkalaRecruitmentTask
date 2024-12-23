@@ -1,9 +1,8 @@
 ﻿using OkalaRecruitmentTask.Models;
 
-namespace OkalaRecruitmentTask.Services
+namespace OkalaRecruitmentTask.Services;
+
+public interface ICryptoPriceService
 {
-    public interface ICryptoPriceService
-    {
-        Task<CryptoPrice?> GetPriceAsync(string code);
-    }
+    Task<CryptoPrice> GetPriceAsync(string code);
 }

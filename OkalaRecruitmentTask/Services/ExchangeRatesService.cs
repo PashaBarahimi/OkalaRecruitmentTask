@@ -1,80 +1,81 @@
 ﻿using OkalaRecruitmentTask.Models;
 using Newtonsoft.Json.Linq;
+using System.Configuration;
 
-namespace OkalaRecruitmentTask.Services
+namespace OkalaRecruitmentTask.Services;
+
+public class ExchangeRatesService(ILogger<ExchangeRatesService> logger, IConfiguration configuration) : ICurrencyRatesService
 {
-    public class ExchangeRatesService(ILogger<ExchangeRatesService> logger, IConfiguration configuration) : IExchangeRatesService
+    public async Task<CurrencyRates> GetCurrencyRatesAsync()
     {
-        private readonly ILogger<ExchangeRatesService> _logger = logger;
-        private readonly IConfiguration _configuration = configuration;
+        logger.LogInformation("Getting currency rates");
 
-        public Task<ExchangeRates?> GetExchangeRatesAsync()
+        var baseCurrency = configuration["Quotes:Currencies:Base"];
+        if (string.IsNullOrEmpty(baseCurrency))
         {
-            _logger.LogInformation("Getting exchange rates");
-
-            var baseCurrency = _configuration["Quotes:Currencies:Base"];
-            if (string.IsNullOrEmpty(baseCurrency))
-            {
-                _logger.LogWarning("Base currency not found in configuration");
-                return Task.FromResult<ExchangeRates?>(null);
-            }
-
-            var exchangeRates = GetExchangeRatesWithBaseAsync(baseCurrency);
-            _logger.LogInformation("Exchange rates found");
-
-            return exchangeRates;
+            logger.LogCritical("Base currency not found in the configuration");
+            throw new ConfigurationErrorsException("Base currency not found in the configuration");
         }
 
-        public async Task<ExchangeRates?> GetExchangeRatesWithBaseAsync(string baseCurrency)
+        return await GetCurrencyRatesWithBaseAsync(baseCurrency);
+    }
+
+    private async Task<CurrencyRates> GetCurrencyRatesWithBaseAsync(string baseCurrency)
+    {
+        logger.LogInformation("Getting currency rates with base {BaseCurrency}", baseCurrency);
+
+        var url = configuration["Quotes:APIs:ExchangeRates:URL"];
+        if (string.IsNullOrEmpty(url))
         {
-            _logger.LogInformation("Getting exchange rates with base {BaseCurrency}", baseCurrency);
-
-            var url = _configuration["Quotes:APIs:ExchangeRates:URL"];
-            if (string.IsNullOrEmpty(url))
-            {
-                _logger.LogCritical("Exchange rates API URL not found in configuration");
-                return null;
-            }
-
-            var apiKey = _configuration["Quotes:APIs:ExchangeRates:APIKey"];
-            if (string.IsNullOrEmpty(apiKey))
-            {
-                _logger.LogCritical("Exchange rates API key not found in configuration (IMPORTANT: Use Dotnet user-secrets)");
-                return null;
-            }
-
-            var requiredSymbols = _configuration.GetSection("Quotes:Currencies:Required").Get<string[]>();
-            if (requiredSymbols is null || requiredSymbols.Length == 0)
-            {
-                _logger.LogWarning("Required currencies not found in configuration");
-                return null;
-            }
-            var symbols = string.Join(',', requiredSymbols);
-
-            _logger.LogInformation("Getting exchange rates with base {BaseCurrency} from {URL}", baseCurrency, url);
-
-            using var client = new HttpClient();
-            var response = await client.GetAsync($"{url}?base={baseCurrency}&symbols={symbols}&access_key={apiKey}");
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogWarning("Failed to get exchange rates with base {BaseCurrency} from {URL}", baseCurrency, url);
-                return null;
-            }
-            var content = await response.Content.ReadAsStringAsync();
-            var json = JObject.Parse(content);
-            var rates = json["rates"]?.ToObject<Dictionary<string, decimal>>();
-            if (rates is null)
-            {
-                _logger.LogWarning("Exchange rates with base {BaseCurrency} not found", baseCurrency);
-                return null;
-            }
-            _logger.LogInformation("Exchange rates with base {BaseCurrency} found", baseCurrency);
-
-            return new ExchangeRates
-            {
-                BaseCurrency = baseCurrency,
-                Rates = rates
-            };
+            logger.LogCritical("ExchangeRates API URL not found in the configuration");
+            throw new ConfigurationErrorsException("ExchangeRates API URL not found in the configuration");
         }
+
+        var apiKey = configuration["Quotes:APIs:ExchangeRates:APIKey"];
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            logger.LogCritical("ExchangeRates API key not found in the configuration (CAUTION: Use dotnet user-secrets)");
+            throw new ConfigurationErrorsException("ExchangeRates API key not found in the configuration");
+        }
+
+        var requiredSymbols = configuration.GetSection("Quotes:Currencies:Required").Get<string[]>();
+        if (requiredSymbols is null || requiredSymbols.Length == 0)
+        {
+            logger.LogCritical("Required currencies not found in the configuration");
+            throw new ConfigurationErrorsException("Required currencies not found in the configuration");
+        }
+        var symbols = string.Join(',', requiredSymbols);
+
+        return await FetchCurrencyRatesFromApiAsync(url, baseCurrency, symbols, apiKey);
+    }
+
+    private async Task<CurrencyRates> FetchCurrencyRatesFromApiAsync(string url, string baseCurrency, string symbols, string apiKey)
+    {
+        logger.LogInformation("Fetching currency rates from {URL}", url);
+
+        using var client = new HttpClient();
+        var response = await client.GetAsync($"{url}?base={baseCurrency}&symbols={symbols}&access_key={apiKey}");
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogError("Failed to get currency rates from {URL}", url);
+            throw new HttpRequestException("Failed to get currency rates from the API");
+        }
+
+        var content = await response.Content.ReadAsStringAsync();
+        var json = JObject.Parse(content);
+        var rates = json["rates"]?.ToObject<Dictionary<string, decimal>>();
+        if (rates is null || rates.Count == 0)
+        {
+            logger.LogError("Currency rates not found in the API response");
+            throw new KeyNotFoundException("Currency rates not found in the API response");
+        }
+
+        logger.LogInformation("Fetched currency rates from {URL}", url);
+
+        return new CurrencyRates
+        {
+            BaseCurrency = baseCurrency,
+            Rates = rates
+        };
     }
 }
