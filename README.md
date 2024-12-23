@@ -1,5 +1,12 @@
 # Okala Recruitment Task
 
+## Table of Contents
+
+- [Introduction](#introduction)
+- [Secrets Initialization](#secrets-initialization)
+- [Running the Project](#running-the-project)
+- [Running the Tests](#running-the-tests)
+
 ## Introduction
 
 This repository contains the source code for the Okala recruitment task. The task is to create a simple API that allows users to fetch a cryptocurrency quote by entering the cryptocurrency symbol.
