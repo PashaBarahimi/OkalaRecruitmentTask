@@ -21,9 +21,8 @@ Before running the project, you need to set the following secrets:
 To set the secrets, run the following commands:
 
 ```bash
-dotnet user-secrets init
-dotnet user-secrets set "Quotes:APIs:CoinMarketCap:APIKey" "<CoinMarketCap API Key>"
-dotnet user-secrets set "Quotes:APIs:ExchangeRates:APIKey" "<ExchangeRate-API Access Key>"
+dotnet user-secrets --project OkalaRecruitmentTask set "Quotes:APIs:CoinMarketCap:APIKey" "<CoinMarketCap API Key>"
+dotnet user-secrets --project OkalaRecruitmentTask set "Quotes:APIs:ExchangeRates:APIKey" "<ExchangeRate-API Access Key>"
 ```
 
 ## Running the Project
