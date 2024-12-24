@@ -1,6 +1,14 @@
+using Microsoft.Extensions.Options;
+using OkalaRecruitmentTask.Configurations;
 using OkalaRecruitmentTask.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddOptions<QuotesConfig>()
+    .Bind(builder.Configuration.GetSection("Quotes"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+builder.Services.AddSingleton<IValidateOptions<QuotesConfig>, QuotesConfigValidator>();
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();

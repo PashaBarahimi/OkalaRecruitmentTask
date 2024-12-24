@@ -1,22 +1,21 @@
 ﻿using OkalaRecruitmentTask.Models;
 using Newtonsoft.Json.Linq;
-using System.Configuration;
+using Microsoft.Extensions.Options;
+using OkalaRecruitmentTask.Configurations;
 
 namespace OkalaRecruitmentTask.Services;
 
-public class ExchangeRatesService(ILogger<ExchangeRatesService> logger, IConfiguration configuration, HttpClient client)
+public class ExchangeRatesService(
+    ILogger<ExchangeRatesService> logger,
+    IOptions<QuotesConfig> configuration,
+    HttpClient client)
     : ICurrencyRatesService
 {
     public async Task<CurrencyRates> GetCurrencyRatesAsync()
     {
         logger.LogInformation("Getting currency rates");
 
-        var baseCurrency = configuration["Quotes:Currencies:Base"];
-        if (string.IsNullOrEmpty(baseCurrency))
-        {
-            logger.LogCritical("Base currency not found in the configuration");
-            throw new ConfigurationErrorsException("Base currency not found in the configuration");
-        }
+        var baseCurrency = configuration.Value.Currencies.Base;
 
         return await GetCurrencyRatesWithBaseAsync(baseCurrency);
     }
@@ -25,29 +24,9 @@ public class ExchangeRatesService(ILogger<ExchangeRatesService> logger, IConfigu
     {
         logger.LogInformation("Getting currency rates with base {BaseCurrency}", baseCurrency);
 
-        var url = configuration["Quotes:APIs:ExchangeRates:URL"];
-        if (string.IsNullOrEmpty(url))
-        {
-            logger.LogCritical("ExchangeRates API URL not found in the configuration");
-            throw new ConfigurationErrorsException("ExchangeRates API URL not found in the configuration");
-        }
-
-        var apiKey = configuration["Quotes:APIs:ExchangeRates:APIKey"];
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            logger.LogCritical(
-                "ExchangeRates API key not found in the configuration (CAUTION: Use dotnet user-secrets)");
-            throw new ConfigurationErrorsException("ExchangeRates API key not found in the configuration");
-        }
-
-        var x = configuration.GetSection("Quotes:Currencies:Required");
-        var requiredSymbols = configuration.GetSection("Quotes:Currencies:Required").Get<string[]>();
-        if (requiredSymbols is null || requiredSymbols.Length == 0)
-        {
-            logger.LogCritical("Required currencies not found in the configuration");
-            throw new ConfigurationErrorsException("Required currencies not found in the configuration");
-        }
-
+        var url = configuration.Value.Apis.ExchangeRates.Url;
+        var apiKey = configuration.Value.Apis.ExchangeRates.ApiKey;
+        var requiredSymbols = configuration.Value.Currencies.Required;
         var symbols = string.Join(',', requiredSymbols);
 
         return await FetchCurrencyRatesFromApiAsync(url, baseCurrency, symbols, apiKey);

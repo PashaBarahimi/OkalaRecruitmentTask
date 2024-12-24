@@ -1,41 +1,29 @@
 ﻿using OkalaRecruitmentTask.Models;
 using Newtonsoft.Json.Linq;
-using System.Configuration;
+using Microsoft.Extensions.Options;
+using OkalaRecruitmentTask.Configurations;
 
 namespace OkalaRecruitmentTask.Services;
 
-public class CoinMarketCapService(ILogger<CoinMarketCapService> logger, IConfiguration configuration, HttpClient client)
+public class CoinMarketCapService(
+    ILogger<CoinMarketCapService> logger,
+    IOptions<QuotesConfig> configuration,
+    HttpClient client)
     : ICryptoPriceService
 {
     public async Task<CryptoPrice> GetPriceAsync(string code)
     {
         logger.LogInformation("Getting price for {Code}", code);
 
-        var baseCurrency = configuration["Quotes:Currencies:Base"];
-        if (string.IsNullOrEmpty(baseCurrency))
-        {
-            logger.LogCritical("Base currency not found in the configuration");
-            throw new ConfigurationErrorsException("Base currency not found in the configuration");
-        }
+        var baseCurrency = configuration.Value.Currencies.Base;
 
         return await GetPriceInCurrencyAsync(code, baseCurrency);
     }
 
     private async Task<CryptoPrice> GetPriceInCurrencyAsync(string code, string currency)
     {
-        var url = configuration["Quotes:APIs:CoinMarketCap:URL"];
-        if (string.IsNullOrEmpty(url))
-        {
-            logger.LogCritical("CoinMarketCap API URL not found in the configuration");
-            throw new ConfigurationErrorsException("CoinMarketCap API URL not found in the configuration");
-        }
-
-        var apiKey = configuration["Quotes:APIs:CoinMarketCap:APIKey"];
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            logger.LogCritical("CoinMarketCap API key not found in configuration (CAUTION: Use dotnet user-secrets)");
-            throw new ConfigurationErrorsException("CoinMarketCap API key not found in the configuration");
-        }
+        var url = configuration.Value.Apis.CoinMarketCap.Url;
+        var apiKey = configuration.Value.Apis.CoinMarketCap.ApiKey;
 
         return await FetchPriceFromApiAsync(url, code, currency, apiKey);
     }
