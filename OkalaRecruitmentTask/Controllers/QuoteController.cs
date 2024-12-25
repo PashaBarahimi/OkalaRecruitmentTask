@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using OkalaRecruitmentTask.Models;
 using OkalaRecruitmentTask.Services;
-using System.Configuration;
 using System.Net;
 
 namespace OkalaRecruitmentTask.Controllers;
@@ -36,11 +35,6 @@ public class QuoteController(ILogger<QuoteController> logger, ICryptoQuoteServic
         {
             logger.LogError(ex, "Failed to get quote for {Code}", code);
             return NotFound("Failed to get quote for the code");
-        }
-        catch (ConfigurationErrorsException ex)
-        {
-            logger.LogCritical(ex, "Configuration error");
-            return StatusCode((int) HttpStatusCode.InternalServerError, "Failed to get quote for the code");
         }
         catch (Exception ex)
         {
