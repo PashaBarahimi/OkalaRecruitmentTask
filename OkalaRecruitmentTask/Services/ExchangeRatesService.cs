@@ -15,7 +15,7 @@ public class ExchangeRatesService(
     {
         logger.LogInformation("Getting currency rates");
 
-        var baseCurrency = configuration.Value.Currencies.Base;
+        var baseCurrency = configuration.Value.Currencies!.Base!;
 
         return await GetCurrencyRatesWithBaseAsync(baseCurrency);
     }
@@ -24,9 +24,9 @@ public class ExchangeRatesService(
     {
         logger.LogInformation("Getting currency rates with base {BaseCurrency}", baseCurrency);
 
-        var url = configuration.Value.Apis.ExchangeRates.Url;
-        var apiKey = configuration.Value.Apis.ExchangeRates.ApiKey;
-        var requiredSymbols = configuration.Value.Currencies.Required;
+        var url = configuration.Value.Apis!.ExchangeRates.Url!;
+        var apiKey = configuration.Value.Apis.ExchangeRates.ApiKey!;
+        var requiredSymbols = configuration.Value.Currencies!.Required!;
         var symbols = string.Join(',', requiredSymbols);
 
         return await FetchCurrencyRatesFromApiAsync(url, baseCurrency, symbols, apiKey);

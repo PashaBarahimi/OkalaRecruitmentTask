@@ -15,15 +15,15 @@ public class CoinMarketCapService(
     {
         logger.LogInformation("Getting price for {Code}", code);
 
-        var baseCurrency = configuration.Value.Currencies.Base;
+        var baseCurrency = configuration.Value.Currencies!.Base!;
 
         return await GetPriceInCurrencyAsync(code, baseCurrency);
     }
 
     private async Task<CryptoPrice> GetPriceInCurrencyAsync(string code, string currency)
     {
-        var url = configuration.Value.Apis.CoinMarketCap.Url;
-        var apiKey = configuration.Value.Apis.CoinMarketCap.ApiKey;
+        var url = configuration.Value.Apis!.CoinMarketCap.Url!;
+        var apiKey = configuration.Value.Apis.CoinMarketCap.ApiKey!;
 
         return await FetchPriceFromApiAsync(url, code, currency, apiKey);
     }

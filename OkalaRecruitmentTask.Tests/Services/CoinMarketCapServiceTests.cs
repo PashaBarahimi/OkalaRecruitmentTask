@@ -1,35 +1,41 @@
-﻿using System.Configuration;
-using System.Net;
-using Microsoft.Extensions.Configuration;
+﻿using System.Net;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 using Newtonsoft.Json.Linq;
+using OkalaRecruitmentTask.Configurations;
 using OkalaRecruitmentTask.Services;
 
 namespace OkalaRecruitmentTask.Tests.Services;
 
 public class CoinMarketCapServiceTests
 {
-    private readonly Mock<IConfiguration> _mockConfiguration;
+    private readonly Mock<IOptions<QuotesConfig>> _mockOptions;
     private readonly Mock<HttpMessageHandler> _mockHttpMessageHandler;
     private readonly CoinMarketCapService _service;
 
     public CoinMarketCapServiceTests()
     {
         Mock<ILogger<CoinMarketCapService>> mockLogger = new();
-        _mockConfiguration = new Mock<IConfiguration>();
+        _mockOptions = new Mock<IOptions<QuotesConfig>>();
         _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
         var httpClient = new HttpClient(_mockHttpMessageHandler.Object);
-        _service = new CoinMarketCapService(mockLogger.Object, _mockConfiguration.Object, httpClient);
+        _service = new CoinMarketCapService(mockLogger.Object, _mockOptions.Object, httpClient);
     }
 
-    private void SetupConfiguration(string? baseCurrency = "USD", string? apiUrl = "https://api.com",
-        string? apiKey = "api.key")
+    private void SetupConfiguration(string baseCurrency = "USD", string apiUrl = "https://api.com",
+        string apiKey = "api.key")
     {
-        _mockConfiguration.Setup(x => x["Quotes:Currencies:Base"]).Returns(baseCurrency);
-        _mockConfiguration.Setup(x => x["Quotes:APIs:CoinMarketCap:URL"]).Returns(apiUrl);
-        _mockConfiguration.Setup(x => x["Quotes:APIs:CoinMarketCap:APIKey"]).Returns(apiKey);
+        var configuration = new QuotesConfig
+        {
+            Currencies = new QuotesConfig.CurrenciesConfig {Base = baseCurrency},
+            Apis = new QuotesConfig.ApisConfig
+            {
+                CoinMarketCap = new QuotesConfig.ApisConfig.CoinMarketCapConfig {Url = apiUrl, ApiKey = apiKey}
+            }
+        };
+        _mockOptions.Setup(x => x.Value).Returns(configuration);
     }
 
     private void SetupHttpClient(HttpStatusCode statusCode = HttpStatusCode.OK, string content = "")
@@ -52,63 +58,36 @@ public class CoinMarketCapServiceTests
         };
         return json.ToString();
     }
-    
+
     [Fact]
     public async Task GetPriceAsync_WhenConfigurationIsValid_ReturnsPrice()
     {
         SetupConfiguration();
         SetupHttpClient(HttpStatusCode.OK, GetExpectedHttpResponse(50000));
-        
+
         var price = await _service.GetPriceAsync("BTC");
-        
+
         Assert.Equal(50000, price.PriceBase);
         Assert.Equal("USD", price.BaseCurrency);
         Assert.Equal("BTC", price.Code);
     }
-    
-    [Fact]
-    public async Task GetPriceAsync_WhenBaseCurrencyIsMissing_ThrowsConfigurationErrorsException()
-    {
-        SetupConfiguration(baseCurrency: null);
-        
-        var exception = await Assert.ThrowsAsync<ConfigurationErrorsException>(() => _service.GetPriceAsync("BTC"));
-        Assert.Equal("Base currency not found in the configuration", exception.Message);
-    }
-    
-    [Fact]
-    public async Task GetPriceAsync_WhenApiUrlIsMissing_ThrowsConfigurationErrorsException()
-    {
-        SetupConfiguration(apiUrl: null);
-        
-        var exception = await Assert.ThrowsAsync<ConfigurationErrorsException>(() => _service.GetPriceAsync("BTC"));
-        Assert.Equal("CoinMarketCap API URL not found in the configuration", exception.Message);
-    }
-    
-    [Fact]
-    public async Task GetPriceAsync_WhenApiKeyIsMissing_ThrowsConfigurationErrorsException()
-    {
-        SetupConfiguration(apiKey: null);
-        
-        var exception = await Assert.ThrowsAsync<ConfigurationErrorsException>(() => _service.GetPriceAsync("BTC"));
-        Assert.Equal("CoinMarketCap API key not found in the configuration", exception.Message);
-    }
-    
+
     [Fact]
     public async Task GetPriceAsync_WhenApiReturnsError_ThrowsHttpRequestException()
     {
         SetupConfiguration();
         SetupHttpClient(HttpStatusCode.BadRequest);
-        
+
         var exception = await Assert.ThrowsAsync<HttpRequestException>(() => _service.GetPriceAsync("BTC"));
         Assert.Equal("Failed to get price from the API", exception.Message);
     }
-    
+
     [Fact]
     public async Task GetPriceAsync_WhenApiResponseIsInvalid_ThrowsKeyNotFoundException()
     {
         SetupConfiguration();
         SetupHttpClient(HttpStatusCode.OK, "{}");
-        
+
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.GetPriceAsync("BTC"));
         Assert.Equal("Price not found in the API response", exception.Message);
     }
